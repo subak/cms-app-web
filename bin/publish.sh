@@ -3,7 +3,7 @@
 set -eu
 
 out_dir=${1}
-export PUBLISH=${out_dir}
+PUBLISH=${out_dir}
 local=${2:-local}
 MAX_PROCS=${MAX_PROCS:-4}
 
