@@ -12,7 +12,13 @@ trait View {
     } else if (is_object($content) && is_callable($content)) {
       $attr = $this->attr($option);
       ob_start();
+
       $content($args);
+
+//      echo "<${tag}${attr}>";
+//      $content($args);
+//      echo "</${tag}>";
+
       $content = ob_get_clean();
     } else {
       $attr = $this->attr($option);
@@ -105,7 +111,4 @@ trait View {
     }
     return $result;
   }
-
-
-
 }
