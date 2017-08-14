@@ -132,13 +132,12 @@ EOF;
 
   protected function adoc_gen($path) {
     $basename = basename($path);
-    $content_dir = "/tmp/cms";
+    $content_dir = "public";
     $rel_content_dir = $this->rel_content_dir($path);
     $destination_dir = "${content_dir}/${rel_content_dir}";
     fputs(STDERR, `mkdir -pv ${destination_dir}`);
     $tmp_path = "${destination_dir}/${basename}";
     copy($path, $tmp_path);
-
     return $tmp_path;
   }
 
@@ -166,25 +165,21 @@ EOF;
         $cmd = "pandoc ${option} ${path} ${filter}";
         break;
     }
-
     if ($out_dir=$context->get('out_dir')) {
       fputs(STDERR, $this->build_content_resource($path, $out_dir));
     }
-
     return `${cmd}`;
   }
 
   protected function build_content_resource($file_name, $out_dir) {
     $content_dir = dirname($file_name);
-    $rel_content_dir = preg_replace("@^content/@", '', dirname($file_name));
+    $rel_content_dir = preg_replace("@^[^/]+/@", '', $content_dir);
     $local_dir = "${out_dir}/${rel_content_dir}";
     $context = $this->doc_context($file_name);
     $resources = '\.'.implode('$|\.', $context->get('resources')).'$';
-
     $msg = '';
     $msg .= `mkdir -pv ${local_dir}`;
     $msg .= `find ${content_dir}/* -type f | egrep -E '${resources}' | xargs -I@ cp -v @ ${local_dir}`;
-
     return $msg;
   }
 }
