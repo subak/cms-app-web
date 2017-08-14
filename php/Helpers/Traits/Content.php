@@ -55,7 +55,7 @@ EOF;
     $body_method = "${ext}_body";
     $full_method = "${ext}_full";
     $excerpt_method = "${ext}_excerpted";
-    
+
     if (array_key_exists('including_title', $opts) && $opts['including_title']) {
       return $this->$full_method();
     } else if (array_key_exists('excerpt', $opts) && !is_null($opts['excerpt'])) {
@@ -133,13 +133,12 @@ EOF;
 
   protected function adoc_gen($path) {
     $basename = basename($path);
-    $content_dir = "/tmp/cms";
+    $content_dir = "public";
     $rel_content_dir = $this->rel_content_dir($path);
     $destination_dir = "${content_dir}/${rel_content_dir}";
     fputs(STDERR, `mkdir -pv ${destination_dir}`);
     $tmp_path = "${destination_dir}/${basename}";
     copy($path, $tmp_path);
-
     return $tmp_path;
   }
 
@@ -150,7 +149,7 @@ EOF;
     $context = $this->doc_context($file_name);
     $rel_dir = $this->rel_dir($path, $uri);
     $assets = $context->get('resources');
-    
+
     $option = $this->doc_option($ext, $context);
     $filter = $this->doc_filter($ext, $params);
     $filter .= $this->rel_filter($rel_dir, $assets);
@@ -220,7 +219,7 @@ EOF;
   
   protected function build_content_resource($file_name, $out_dir) {
     $content_dir = dirname($file_name);
-    $rel_content_dir = preg_replace("@^content/@", '', dirname($file_name));
+    $rel_content_dir = preg_replace("@^[^/]+//@", '', dirname($file_name));
     $local_dir = "${out_dir}/${rel_content_dir}";
     $context = $this->doc_context($file_name);
     $resources = '\.'.implode('$|\.', $context->get('resources')).'$';
