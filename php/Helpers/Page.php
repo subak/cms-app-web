@@ -65,4 +65,11 @@ class Page
   protected function is_dir($uri) {
     return substr($uri, -1) === '/';
   }
+  
+  protected function exec($cmd) {
+    fputs(STDERR, $cmd);
+    $res=`${cmd}`;
+    fputs(STDERR, $res);
+    return $res;
+  }
 }
