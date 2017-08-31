@@ -132,14 +132,14 @@ EOF;
   }
 
   /**
-   * @param $path
-   * @param $dst_dir
-   * @param $strip_dir
+   * @param string $path
+   * @param string $dst_dir
+   * @param string $strip_dir
    * @return string
    */
-  protected function adoc_gen($path, $dst_dir, $strip_dir): string {
+  protected function adoc_gen(string $path, string $dst_dir, string $strip_dir): string {
     $src_dir = dirname($path);
-    $this->exec("cpr.sh ${src_dir} ${dst_dir} ${content_dir}");
+    $this->exec("cpr.sh ${src_dir} ${dst_dir} ${strip_dir}");
     return str_replace($strip_dir, $dst_dir, $path);
   }
 
