@@ -12,3 +12,6 @@ pandoc:
   rst:
     from: rst
     to: html5
+
+content_dir: content
+tmp_dir: /tmp/cms
