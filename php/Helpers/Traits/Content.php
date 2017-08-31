@@ -131,15 +131,16 @@ EOF;
     return $this->$method($context);
   }
 
-  protected function adoc_gen($path) {
-    $basename = basename($path);
-    $content_dir = "public";
-    $rel_content_dir = $this->rel_content_dir($path);
-    $destination_dir = "${content_dir}/${rel_content_dir}";
-    fputs(STDERR, `mkdir -pv ${destination_dir}`);
-    $tmp_path = "${destination_dir}/${basename}";
-    copy($path, $tmp_path);
-    return $tmp_path;
+  /**
+   * @param $path
+   * @param $dst_dir
+   * @param $strip_dir
+   * @return string
+   */
+  protected function adoc_gen($path, $dst_dir, $strip_dir): string {
+    $src_dir = dirname($path);
+    $this->exec("cpr.sh ${src_dir} ${dst_dir} ${content_dir}");
+    return str_replace($strip_dir, $dst_dir, $path);
   }
 
   public function load_document($file_name, $uri, $params=[]) {
@@ -154,11 +155,14 @@ EOF;
     $filter = $this->doc_filter($ext, $params);
     $filter .= $this->rel_filter($rel_dir, $assets);
 
+    $content_dir = "content";
+    $tmp_dir = '/tmp/cms';
+    
     switch ($ext) {
       case 'adoc':
         if (($requires = $context->get('asciidoctor.requires'))
           && is_int(array_search('asciidoctor-diagram', $requires))) {
-          $path = $this->adoc_gen($path);
+          $path = $this->adoc_gen($path, $tmp_dir, $content_dir);
         }
         $cmd = "asciidoctor ${option} -o - ${path} ${filter}";
         break;
@@ -167,7 +171,7 @@ EOF;
         break;
     }
     if ($out_dir=$context->get('out_dir')) {
-      fputs(STDERR, $this->build_content_resource($path, $out_dir));
+      $this->build_content_resource(dirname($path), $out_dir, $tmp_dir);
     }
     return `${cmd}`;
   }
@@ -188,11 +192,14 @@ EOF;
     $filter = $this->doc_filter($ext, []);
     $filter .= $this->rel_filter($rel_dir, $assets);
 
+    $content_dir = "content";
+    $tmp_dir = '/tmp/cms';
+    
     switch ($ext) {
       case 'adoc':
         if (($requires = $context->get('asciidoctor.requires'))
           && is_int(array_search('asciidoctor-diagram', $requires))) {
-          $path = $this->adoc_gen($path);
+          $path = $this->adoc_gen($path, $tmp_dir, $content_dir);
         }
         $cmd = "asciidoctor ${option} -o - ${path} ${filter}";
         break;
@@ -201,29 +208,23 @@ EOF;
         break;
     }
 
-    if ($out_dir=$context->get('out_dir')) {
-      fputs(STDERR, $this->build_content_resource($path, $out_dir));
-    }
-
     ob_start();
     echo $closure(`${cmd}`, $takeover);
     $result = ob_get_clean();
 
-    $context->unregister('doc');
+    if ($out_dir=$context->get('out_dir')) {
+      $this->build_content_resource(dirname($path), $out_dir, $tmp_dir);
+    }
     
+    $context->unregister('doc');
     
     return $result;
   }
   
-  protected function build_content_resource($file_name, $out_dir) {
-    $content_dir = dirname($file_name);
-    $rel_content_dir = preg_replace("@^[^/]+/@", '', $content_dir);
-    $local_dir = "${out_dir}/${rel_content_dir}";
-    $context = $this->doc_context($file_name);
+  protected function build_content_resource($src_dir, $dst_dir, $strip_dir) {
+    $context = $this->doc_context($path);
     $resources = '\.'.implode('$|\.', $context->get('resources')).'$';
-    $msg = '';
-    $msg .= `mkdir -pv ${local_dir}`;
-    $msg .= `find ${content_dir}/* -type f | egrep -E '${resources}' | xargs -I@ cp -v @ ${local_dir}`;
-    return $msg;
+
+    return $this->exec("cpr.sh ${src_dir} ${dst_dir} ${strip_dir} '${resources}'");
   }
 }
