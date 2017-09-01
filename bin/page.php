@@ -20,7 +20,7 @@ spl_autoload_register(function ($name)
     include $path : false;
 });
 
-$context = new \ContextJq(end($_SERVER["argv"]));
+$context = new \Context(end($_SERVER["argv"]));
 reset($_SERVER["argv"]);
 
 if (!($helper = $context->query('.helper'))) {

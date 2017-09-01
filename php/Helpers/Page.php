@@ -7,13 +7,23 @@ class Page
   use Traits\View, Traits\Content, Traits\Util;
 
   protected $context;
+  protected $params;
   
-    public function __construct($context)
+    public function __construct($params)
     {
-        $context = $context->unshift(`yaml2json content/meta.yml`);
-        $this->context = $context->unshift(`yaml2json $(ls -1 */config/meta.yml | head -1)`);
+        $this->params = json_encode($params->query('.'));
+        $context = new \Context(`yaml2json $(ls -1 */config/meta.yml | head -1)`);
+        $context = $context->stack(`yaml2json content/meta.yml`);
+        $this->context = $context->stack($this->params);
     }
 
+    protected function stack($json)
+    {
+        return $this->context->unstack()
+            ->stack($json)
+            ->stack($this->params);
+    }
+    
   protected function router() {
     static $router = null;
     if (is_null($router)) {
@@ -29,14 +39,6 @@ class Page
     }
     return $context;
   }
-
-//  public function context($key=null, $desc=true, $multiple=false) {
-//    if (is_null($key)) {
-//      return self::page_context();
-//    } else {
-//      return self::page_context()->get($key, $desc, $multiple);
-//    }
-//  }
 
   public function include($name="include/") {
     static $current = null;

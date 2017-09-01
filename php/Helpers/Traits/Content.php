@@ -106,8 +106,10 @@ EOF;
   }
 
   protected function md_option($context) {
-    $meta = $context->get('pandoc.md');
-    return "-f ${meta['from']} -t ${meta['to']}";
+    $option = $context->query('.pandoc.md');
+    $from = $option->from;
+    $to = $option->to;
+    return "-f ${from} -t ${to}";
   }
 
   protected function doc_option($ext, $context) {
@@ -131,7 +133,7 @@ EOF;
     $path = $this->detect_document($file_name);
     $info = pathinfo($path);
     $ext = $info['extension'];
-    $context = $this->context->push($this->context_from_file("${file_name}.yml"));
+    $context = $this->stack($this->context_from_file("${file_name}.yml"));
     $rel_dir = $this->rel_dir($path, $uri);
     $assets = $context->get('resources');
     
@@ -164,7 +166,7 @@ EOF;
     $path = $this->detect_document($file_name);
     $info = pathinfo($path);
     $ext = $info['extension'];
-    $context = $this->context->push($this->context_from_file("${file_name}.yml"));
+    $context = $this->stack($this->context_from_file("${file_name}.yml"));
     $rel_dir = $this->rel_dir($path, $uri);
     $assets = $context->get('resources');
 
@@ -201,7 +203,7 @@ EOF;
 
     protected function build_content_resource($path, $dst_dir, $strip_dir)
     {
-        $context = $this->context->push($this->context_from_file(preg_replace('@\.[^.]+$@', '.yml', $path)));
+        $context = $this->context->stack($this->context_from_file(preg_replace('@\.[^.]+$@', '.yml', $path)));
         $resources = '\.' . implode('$|\.', $context->get('resources')) . '$';
 
         $src_dir = dirname($path);
