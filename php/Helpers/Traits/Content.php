@@ -3,22 +3,6 @@
 namespace Helpers\Traits;
 
 trait Content {
-  protected function doc_context($file_name, $name='doc') {
-    $context = new \Context(\Helpers\Page::page_context()->stack());
-    $context->insert_before('handler', $this->doc_metadata($file_name), $name);
-    return $context;
-  }
-
-  protected function doc_metadata($file_name) {
-    $path = "${file_name}.yml";
-
-    if (file_exists($path)) {
-      return yaml_parse_file($path);
-    } else {
-      return [];
-    }
-  }
-
   protected function detect_document($file_name) {
     $info = pathinfo($file_name);
     if (!array_key_exists('extension', $info)) {
@@ -55,7 +39,7 @@ EOF;
     $body_method = "${ext}_body";
     $full_method = "${ext}_full";
     $excerpt_method = "${ext}_excerpted";
-
+    
     if (array_key_exists('including_title', $opts) && $opts['including_title']) {
       return $this->$full_method();
     } else if (array_key_exists('excerpt', $opts) && !is_null($opts['excerpt'])) {
@@ -122,8 +106,10 @@ EOF;
   }
 
   protected function md_option($context) {
-    $meta = $context->get('pandoc.md');
-    return "-f ${meta['from']} -t ${meta['to']}";
+    $option = $context->query('.pandoc.md');
+    $from = $option->from;
+    $to = $option->to;
+    return "-f ${from} -t ${to}";
   }
 
   protected function doc_option($ext, $context) {
@@ -147,10 +133,10 @@ EOF;
     $path = $this->detect_document($file_name);
     $info = pathinfo($path);
     $ext = $info['extension'];
-    $context = $this->doc_context($file_name);
+    $context = $this->stack($this->context_from_file("${file_name}.yml"));
     $rel_dir = $this->rel_dir($path, $uri);
     $assets = $context->get('resources');
-
+    
     $option = $this->doc_option($ext, $context);
     $filter = $this->doc_filter($ext, $params);
     $filter .= $this->rel_filter($rel_dir, $assets);
@@ -171,20 +157,16 @@ EOF;
         break;
     }
     if ($out_dir=$context->get('out_dir')) {
-      $this->build_content_resource(dirname($path), $out_dir, $tmp_dir);
+      $this->build_content_resource($path, $out_dir, $tmp_dir);
     }
     return `${cmd}`;
   }
 
-  public function load_document_with($file_name, $uri, $closure, $takeover=[]) {
+  public function load_document_with($file_name, $uri, $closure) {
     $path = $this->detect_document($file_name);
     $info = pathinfo($path);
     $ext = $info['extension'];
-
-    $context = $this->context();
-
-    $context->insert_before('handler', $this->doc_metadata($file_name), 'doc');
-
+    $context = $this->stack($this->context_from_file("${file_name}.yml"));
     $rel_dir = $this->rel_dir($path, $uri);
     $assets = $context->get('resources');
 
@@ -209,22 +191,22 @@ EOF;
     }
 
     ob_start();
-    echo $closure(`${cmd}`, $takeover);
+    echo $closure(`${cmd}`, $context);
     $result = ob_get_clean();
 
     if ($out_dir=$context->get('out_dir')) {
-      $this->build_content_resource(dirname($path), $out_dir, $tmp_dir);
+      $this->build_content_resource($path, $out_dir, $tmp_dir);
     }
-    
-    $context->unregister('doc');
-    
+
     return $result;
   }
-  
-  protected function build_content_resource($src_dir, $dst_dir, $strip_dir) {
-    $context = $this->doc_context($path);
-    $resources = '\.'.implode('$|\.', $context->get('resources')).'$';
 
-    return $this->exec("cpr.sh ${src_dir} ${dst_dir} ${strip_dir} '${resources}'");
-  }
+    protected function build_content_resource($path, $dst_dir, $strip_dir)
+    {
+        $context = $this->context->stack($this->context_from_file(preg_replace('@\.[^.]+$@', '.yml', $path)));
+        $resources = '\.' . implode('$|\.', $context->get('resources')) . '$';
+
+        $src_dir = dirname($path);
+        return $this->exec("cpr.sh ${src_dir} ${dst_dir} ${strip_dir} '${resources}'");
+    }
 }

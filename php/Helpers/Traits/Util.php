@@ -41,4 +41,8 @@ trait Util
 
         return $stdout;
     }
+    
+    public function context_from_file($path) {
+        return file_exists($path) ? `yaml2json ${path}` : '{}';
+    }
 }
