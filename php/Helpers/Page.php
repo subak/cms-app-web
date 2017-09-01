@@ -6,12 +6,24 @@ class Page
 {
   use Traits\View, Traits\Content, Traits\Util;
 
-  public function __construct($context) {
-    self::page_context()->register(yaml_parse_file(trim(`ls -1 */config/meta.yml | head -1`)), 'app');
-    self::page_context()->register(yaml_parse_file('content/meta.yml'), 'content');
-    self::page_context()->register($context, 'handler');
-  }
+  protected $context;
+  protected $params;
+  
+    public function __construct($params)
+    {
+        $this->params = json_encode($params->query('.'));
+        $context = new \Context(`yaml2json $(ls -1 */config/meta.yml | head -1)`);
+        $context = $context->stack(`yaml2json content/meta.yml`);
+        $this->context = $context->stack($this->params);
+    }
 
+    protected function stack($json)
+    {
+        return $this->context->unstack()
+            ->stack($json)
+            ->stack($this->params);
+    }
+    
   protected function router() {
     static $router = null;
     if (is_null($router)) {
@@ -26,14 +38,6 @@ class Page
       $context = new \Context();
     }
     return $context;
-  }
-
-  public function context($key=null, $desc=true, $multiple=false) {
-    if (is_null($key)) {
-      return self::page_context();
-    } else {
-      return self::page_context()->get($key, $desc, $multiple);
-    }
   }
 
   public function include($name="include/") {

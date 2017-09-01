@@ -46,14 +46,14 @@ trait View {
   public function link_to($content, $path, $option=array(), $args=array()) {
     $option['href'] = $this->rel($path);
 
-    if ( $this->context('local') ) {
+    if ( $this->context->get('local') ) {
       $context = $this->router()->detect($path);
       if ($this->is_dir($context['uri'])) {
         $option['href'] .= 'index.html';
       }
     }
 
-    if ($query = $this->context('query')) {
+    if ($query = $this->context->get('query')) {
       $option['href'] .= "?${query}";
     }
 
@@ -69,11 +69,11 @@ trait View {
   }
 
   public function url_for($path) {
-    return $this->context('scheme').'://'.$this->context('host').$path;
+    return $this->context->get('scheme').'://'.$this->context->get('host').$path;
   }
 
   public function rel($path) {
-    $level = substr_count($this->context('uri'), "/");
+    $level = substr_count($this->context->get('uri'), "/");
     $path = preg_replace('@^/@', './', $path);
     for ($i=1; $i < $level; $i++) {
       $path = '../'.$path;
