@@ -155,8 +155,8 @@ EOF;
     $filter = $this->doc_filter($ext, $params);
     $filter .= $this->rel_filter($rel_dir, $assets);
 
-    $content_dir = "content";
-    $tmp_dir = '/tmp/cms';
+    $content_dir = $context->get('content_dir');
+    $tmp_dir = $context->get('tmp_dir');
     
     switch ($ext) {
       case 'adoc':
@@ -192,8 +192,8 @@ EOF;
     $filter = $this->doc_filter($ext, []);
     $filter .= $this->rel_filter($rel_dir, $assets);
 
-    $content_dir = "content";
-    $tmp_dir = '/tmp/cms';
+    $content_dir = $context->get('content_dir');
+    $tmp_dir = $context->get('tmp_dir');
     
     switch ($ext) {
       case 'adoc':

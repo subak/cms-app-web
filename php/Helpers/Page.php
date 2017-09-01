@@ -4,7 +4,7 @@ namespace Helpers;
 
 class Page
 {
-  use Traits\View, Traits\Content;
+  use Traits\View, Traits\Content, Traits\Util;
 
   public function __construct($context) {
     self::page_context()->register(yaml_parse_file(trim(`ls -1 */config/meta.yml | head -1`)), 'app');
@@ -64,12 +64,5 @@ class Page
 
   protected function is_dir($uri) {
     return substr($uri, -1) === '/';
-  }
-  
-  protected function exec($cmd) {
-    fputs(STDERR, $cmd);
-    $res=`${cmd}`;
-    fputs(STDERR, $res);
-    return $res;
   }
 }
