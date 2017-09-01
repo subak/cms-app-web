@@ -162,11 +162,16 @@ EOF;
     return `${cmd}`;
   }
 
-  public function load_document_with($file_name, $uri, $closure) {
+  public function load_document_with($file_name, $uri, $closure, $pseudo='{}') {
     $path = $this->detect_document($file_name);
     $info = pathinfo($path);
     $ext = $info['extension'];
-    $context = $this->stack($this->context_from_file("${file_name}.yml"));
+    $context = $this->context->unstack()
+        ->stack($this->context_from_file("${file_name}.yml"))
+        ->stack($pseudo)
+        ->stack($this->params);
+    
+    //$context = $this->stack($this->context_from_file("${file_name}.yml"));
     $rel_dir = $this->rel_dir($path, $uri);
     $assets = $context->get('resources');
 
