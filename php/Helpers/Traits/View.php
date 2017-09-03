@@ -3,33 +3,30 @@
 namespace Helpers\Traits;
 
 trait View {
-  public function tag($tag, $content=null, $option=array(), $args=array()) {
-    $tags = array('br','img','hr','meta','input','embed','area','base','col','keygen','link','param','source');
+    public function tag($tag, $content = null, $option = array(), $args = array())
+    {
+        $tags = array('br', 'img', 'hr', 'meta', 'input', 'embed', 'area', 'base', 'col', 'keygen', 'link', 'param', 'source');
 
-    if (is_array($content)) {
-      $attr = $this->attr($content);
-      $content = "";
-    } else if (is_object($content) && is_callable($content)) {
-      $attr = $this->attr($option);
-      ob_start();
+        if (is_array($content)) {
+            $attr = $this->attr($content);
+            $content = "";
+        } else {
+            if (is_object($content) && is_callable($content)) {
+                $attr = $this->attr($option);
+                ob_start();
+                $content($args);
+                $content = ob_get_clean();
+            } else {
+                $attr = $this->attr($option);
+            }
+        }
 
-      $content($args);
-
-//      echo "<${tag}${attr}>";
-//      $content($args);
-//      echo "</${tag}>";
-
-      $content = ob_get_clean();
-    } else {
-      $attr = $this->attr($option);
+        if (in_array($tag, $tags)) {
+            return "<${tag}${attr}>";
+        } else {
+            return "<${tag}${attr}>${content}</${tag}>";
+        }
     }
-
-    if (in_array($tag, $tags)) {
-      return "<${tag}${attr}>";
-    } else {
-      return "<${tag}${attr}>${content}</${tag}>";
-    }
-  }
 
   protected function attr($array) {
     $attributes = array();
