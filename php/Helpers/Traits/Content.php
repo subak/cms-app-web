@@ -125,7 +125,7 @@ EOF;
    */
   protected function adoc_gen(string $path, string $dst_dir, string $strip_dir): string {
     $src_dir = dirname($path);
-    $this->exec("cpr.sh ${src_dir} ${dst_dir} ${strip_dir}");
+    fputs(STDERR, `cpr.sh ${src_dir} ${dst_dir} ${strip_dir}`);
     return str_replace($strip_dir, $dst_dir, $path);
   }
 
@@ -189,6 +189,6 @@ EOF;
         $resources = '\.' . implode('$|\.', $context->get('resources')) . '$';
 
         $src_dir = dirname($path);
-        return $this->exec("cpr.sh ${src_dir} ${dst_dir} ${strip_dir} '${resources}'");
+        fputs(STDERR, `cpr.sh ${src_dir} ${dst_dir} ${strip_dir} '${resources}`);
     }
 }

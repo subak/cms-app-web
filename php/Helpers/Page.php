@@ -4,9 +4,9 @@ namespace Helpers;
 
 class Page
 {
-  use Traits\View, Traits\Content, Traits\Util;
+    use Traits\View, Traits\Content;
 
-  protected $context;
+    protected $context;
   
     public function __construct($context)
     {
@@ -29,7 +29,7 @@ class Page
         }
     }
 
-  protected function is_dir($uri) {
-    return substr($uri, -1) === '/';
-  }
+    protected function is_dir($uri) {
+        return substr($uri, -1) === '/';
+    }
 }
