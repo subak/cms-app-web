@@ -17,31 +17,17 @@ class Page
             ->stack($query ? json_encode($query) : '{}');
     } 
 
-  public function include($name="include/") {
-    static $current = null;
-    $prefix = '';
-    $suffix = '';
+    public function include(string $path) {
+        $context = $this->context;
+        $this->context = $context->stack('{"view": "'.$path.'"}', -1);
 
-    if ('/' === $name[0]) {
-      $name = ltrim($name, '/');
-    } else if (!is_null($current)) {
-      $prefix = preg_replace('@[^/]+$@', '', $current);
+        if ($real_path = stream_resolve_include_path($path)) {
+            include($real_path);
+            $this->context = $context;
+        } else {
+            throw new \Exception("include: ${path}");
+        }
     }
-
-    if ('/' === substr($name, -1)) {
-      $suffix = '_'.ltrim(basename($current), '_');
-    }
-
-    $rel_path = join('/', array_filter([$prefix, $name])).$suffix;
-
-    if ($path = stream_resolve_include_path($rel_path)) {
-      $current = $rel_path;
-      include($path);
-      return null;
-    } else {
-      throw new \Exception($rel_path);
-    }
-  }
 
   protected function is_dir($uri) {
     return substr($uri, -1) === '/';
