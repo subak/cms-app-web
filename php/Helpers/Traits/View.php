@@ -43,12 +43,11 @@ trait View {
     return $attr;
   }
 
-  public function link_to($content, $path, $option=array(), $args=array()) {
-    $option['href'] = $this->rel($path);
+  public function link_to($content, $uri, $option=array(), $args=array()) {
+    $option['href'] = $this->rel($uri);
 
     if ( $this->context->get('local') ) {
-      $context = $this->router()->detect($path);
-      if ($this->is_dir($context['uri'])) {
+      if ($this->is_dir($uri)) {
         $option['href'] .= 'index.html';
       }
     }

@@ -16,22 +16,6 @@ class Page
             ->stack(`yaml2json content/meta.yml`)
             ->stack($query ? json_encode($query) : '{}');
     } 
-    
-  protected function router() {
-    static $router = null;
-    if (is_null($router)) {
-      $router = new \Router(yaml_parse_file(trim(`ls -1 */config/routes.yml | head -1`)));
-    }
-    return $router;
-  }
-
-  static public function page_context() {
-    static $context = null;
-    if (is_null($context)) {
-      $context = new \Context();
-    }
-    return $context;
-  }
 
   public function include($name="include/") {
     static $current = null;
