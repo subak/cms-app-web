@@ -12,7 +12,7 @@ class Page
     {
         parse_str($context->get('query'), $query);
         $this->context = $this->loadAppContext($context)
-            ->stack(`yaml2json content/meta.yml`)
+            ->stack(`yaml2json content/content.yml`)
             ->stack($query ? json_encode($query) : '{}');
     } 
 

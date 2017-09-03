@@ -129,9 +129,16 @@ EOF;
     return str_replace($strip_dir, $dst_dir, $path);
   }
 
-  public function loadDocument($file_name, $before_context='{}', $after_context='{}') {
-      return $this->loadDocumentWith($file_name, function ($doc, $context) { echo $doc; }, $before_context, $after_context);
-  }
+    /**
+     * @param string $file_name
+     * @param string $before_context
+     * @param string $after_context
+     * @return string
+     */
+    public function loadDocument(string $file_name, string $before_context='{}', string $after_context='{}'): string
+    {
+        return $this->loadDocumentWith($file_name, function ($doc, $context) { echo $doc; }, $before_context, $after_context);
+    }
 
     /**
      * @param string $file_name
@@ -145,10 +152,28 @@ EOF;
         $path = $this->detect_document($file_name);
         $info = pathinfo($path);
         $ext = $info['extension'];
+        $context = $this->context;
+        
+        $content_dir = $context->get('content_dir');
+        $tmp_dir = $context->get('tmp_dir');
 
-        $context = $this->context
+        $dirs = explode('/', dirname(str_replace("${content_dir}/", '', $file_name)));
+        $current = [];
+        $context_paths = [];
+        foreach ($dirs as $dir) {
+            $current[] = $dir;
+            $context_paths[] = "${content_dir}/".join('/', $current)."/${dir}.yml";
+        }
+
+        $doc_context = array_pop($context_paths);
+        
+        foreach ($context_paths as $context_path) {
+            $context = $context->stack($this->contextFromFile($context_path), -1);
+        }
+        
+        $context = $context
             ->stack($before_context, -1)
-            ->stack($this->contextFromFile("${file_name}.yml"), -1)
+            ->stack($this->contextFromFile($doc_context), -1)
             ->stack($after_context, -1);
 
         $option = $this->doc_option($ext, $context);
@@ -156,8 +181,6 @@ EOF;
         $rel_dir = $this->rel_dir($path, $context->get('uri'));
         $filter .= $this->rel_filter($rel_dir, $context);
 
-        $content_dir = $context->get('content_dir');
-        $tmp_dir = $context->get('tmp_dir');
 
         switch ($ext) {
             case 'adoc':
@@ -177,13 +200,13 @@ EOF;
         $result = ob_get_clean();
 
         if ($out_dir = $context->get('out_dir')) {
-            $this->build_content_resource($path, $out_dir, $tmp_dir);
+            $this->buildContentResource($path, $out_dir, $tmp_dir);
         }
 
         return $result;
     }
 
-    protected function build_content_resource($path, $dst_dir, $strip_dir)
+    protected function buildContentResource($path, $dst_dir, $strip_dir)
     {
         $context = $this->context->stack($this->contextFromFile(preg_replace('@\.[^.]+$@', '.yml', $path)));
         $resources = '\.' . implode('$|\.', $context->get('resources')) . '$';
