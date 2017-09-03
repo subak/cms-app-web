@@ -40,8 +40,8 @@ trait View {
     return $attr;
   }
 
-  public function link_to($content, $uri, $option=array(), $args=array()) {
-    $option['href'] = $this->rel($uri);
+  public function link_to($content, $uri, $option=array(), $args=array(), ?string $base_uri=null) {
+    $option['href'] = $this->rel($uri, $base_uri);
 
     if ( $this->context->get('local') ) {
       if ($this->is_dir($uri)) {
@@ -68,8 +68,8 @@ trait View {
     return $this->context->get('scheme').'://'.$this->context->get('host').$path;
   }
 
-  public function rel($path) {
-    $level = substr_count($this->context->get('uri'), "/");
+  public function rel($path, ?string $base_uri=null) {
+    $level = substr_count($base_uri ?? $this->context->get('uri'), "/");
     $path = preg_replace('@^/@', './', $path);
     for ($i=1; $i < $level; $i++) {
       $path = '../'.$path;
