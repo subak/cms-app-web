@@ -7,22 +7,15 @@ class Page
   use Traits\View, Traits\Content, Traits\Util;
 
   protected $context;
-  protected $params;
   
-    public function __construct($params)
+    public function __construct($context)
     {
-        $this->params = json_encode($params->query('.'));
-        $context = new \Context(`yaml2json $(ls -1 */config/meta.yml | head -1)`);
-        $context = $context->stack(`yaml2json content/meta.yml`);
-        $this->context = $context->stack($this->params);
-    }
-
-    protected function stack($json)
-    {
-        return $this->context->unstack()
-            ->stack($json)
-            ->stack($this->params);
-    }
+        parse_str($context->get('query'), $query);
+        $this->context = $context
+            ->stack(`yaml2json $(ls -1 */config/meta.yml | head -1)`)
+            ->stack(`yaml2json content/meta.yml`)
+            ->stack($query ? json_encode($query) : '{}');
+    } 
     
   protected function router() {
     static $router = null;

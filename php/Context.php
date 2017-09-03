@@ -28,9 +28,25 @@ class Context
         return $this->query(".${key}");
     }
     
-    public function stack(string $json)
+    public function stack(string $json, ?int $offset=null)
     {
-        return new self(...array_merge($this->_stack, [$json]));
+        if ($offset) {
+            if ($offset === 0) {
+                return new self(...array_merge([$json], $this->_stack));
+            } else if($offset >= 1) {
+                return new self(...array_merge(
+                    array_slice($this->_stack, 0, $offset),
+                    [$json],
+                    array_slice($this->stack, $offset)));
+            } else {
+                return new self(...array_merge(
+                    array_slice($this->_stack, 0, $offset),
+                    [$json],
+                    array_slice($this->_stack, $offset)));
+            }
+        } else {
+            return new self(...array_merge($this->_stack, [$json]));
+        }
     }
     
     public function unstack()

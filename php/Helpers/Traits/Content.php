@@ -28,22 +28,22 @@ trait Content {
     return trim(`head -1 ${path} | sed -r 's/^[#= ]*(.+)[#= ]*$/\\1/'`);
   }
 
-  protected function rel_filter($rel_dir, $assets) {
-    $assets_ptn = implode('|', $assets);
+  protected function rel_filter($rel_dir, $context) {
+    $assets_ptn = implode('|', $context->get('resources'));
     return <<<EOF
  | sed -r 's/"([^/]+)\.(${assets_ptn})"/"${rel_dir}\\1.\\2"/'
 EOF;
   }
 
-  protected function doc_filter($ext, $opts) {
+  protected function doc_filter($ext, $context) {
     $body_method = "${ext}_body";
     $full_method = "${ext}_full";
     $excerpt_method = "${ext}_excerpted";
     
-    if (array_key_exists('including_title', $opts) && $opts['including_title']) {
+    if ($including_title = $context->get('including_title')) {
       return $this->$full_method();
-    } else if (array_key_exists('excerpt', $opts) && !is_null($opts['excerpt'])) {
-      return $this->$excerpt_method($opts['excerpt']);
+    } else if ($excerpt = $context->get('excerpt')) {
+      return $this->$excerpt_method($excerpt);
     } else {
       return $this->$body_method();
     }
@@ -129,55 +129,22 @@ EOF;
     return str_replace($strip_dir, $dst_dir, $path);
   }
 
-  public function load_document($file_name, $uri, $params=[]) {
-    $path = $this->detect_document($file_name);
-    $info = pathinfo($path);
-    $ext = $info['extension'];
-    $context = $this->stack($this->context_from_file("${file_name}.yml"));
-    $rel_dir = $this->rel_dir($path, $uri);
-    $assets = $context->get('resources');
-    
-    $option = $this->doc_option($ext, $context);
-    $filter = $this->doc_filter($ext, $params);
-    $filter .= $this->rel_filter($rel_dir, $assets);
-
-    $content_dir = $context->get('content_dir');
-    $tmp_dir = $context->get('tmp_dir');
-    
-    switch ($ext) {
-      case 'adoc':
-        if (($requires = $context->get('asciidoctor.requires'))
-          && is_int(array_search('asciidoctor-diagram', $requires))) {
-          $path = $this->adoc_gen($path, $tmp_dir, $content_dir);
-        }
-        $cmd = "asciidoctor ${option} -o - ${path} ${filter}";
-        break;
-      case 'md':
-        $cmd = "pandoc ${option} ${path} ${filter}";
-        break;
-    }
-    if ($out_dir=$context->get('out_dir')) {
-      $this->build_content_resource($path, $out_dir, $tmp_dir);
-    }
-    return `${cmd}`;
+  public function load_document($file_name, $before_context='{}', $after_context='{}') {
+      return $this->load_document_with($file_name, function ($doc, $context) { echo $doc; }, $before_context, $after_context);
   }
 
-  public function load_document_with($file_name, $uri, $closure, $pseudo='{}') {
+  public function load_document_with($file_name, $closure, $before_context='{}', $after_context='{}') {
     $path = $this->detect_document($file_name);
     $info = pathinfo($path);
     $ext = $info['extension'];
-    $context = $this->context->unstack()
-        ->stack($this->context_from_file("${file_name}.yml"))
-        ->stack($pseudo)
-        ->stack($this->params);
-    
-    //$context = $this->stack($this->context_from_file("${file_name}.yml"));
-    $rel_dir = $this->rel_dir($path, $uri);
-    $assets = $context->get('resources');
-
+    $context = $this->context
+        ->stack($before_context, -1)
+        ->stack($this->context_from_file("${file_name}.yml"), -1)
+        ->stack($after_context, -1);
+    $rel_dir = $this->rel_dir($path, $context->get('uri'));
     $option = $this->doc_option($ext, $context);
-    $filter = $this->doc_filter($ext, []);
-    $filter .= $this->rel_filter($rel_dir, $assets);
+    $filter = $this->doc_filter($ext, $context);
+    $filter .= $this->rel_filter($rel_dir, $context);
 
     $content_dir = $context->get('content_dir');
     $tmp_dir = $context->get('tmp_dir');
