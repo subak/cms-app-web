@@ -4,15 +4,14 @@ namespace Helpers;
 
 class Page
 {
-    use Traits\View, Traits\Content;
+    use Traits\View, Traits\Content, Traits\Util;
 
     protected $context;
   
     public function __construct($context)
     {
         parse_str($context->get('query'), $query);
-        $this->context = $context
-            ->stack(`yaml2json $(ls -1 */config/meta.yml | head -1)`)
+        $this->context = $this->loadAppContext($context)
             ->stack(`yaml2json content/meta.yml`)
             ->stack($query ? json_encode($query) : '{}');
     } 

@@ -148,7 +148,7 @@ EOF;
 
         $context = $this->context
             ->stack($before_context, -1)
-            ->stack($this->context_from_file("${file_name}.yml"), -1)
+            ->stack($this->contextFromFile("${file_name}.yml"), -1)
             ->stack($after_context, -1);
 
         $option = $this->doc_option($ext, $context);
@@ -185,7 +185,7 @@ EOF;
 
     protected function build_content_resource($path, $dst_dir, $strip_dir)
     {
-        $context = $this->context->stack($this->context_from_file(preg_replace('@\.[^.]+$@', '.yml', $path)));
+        $context = $this->context->stack($this->contextFromFile(preg_replace('@\.[^.]+$@', '.yml', $path)));
         $resources = '\.' . implode('$|\.', $context->get('resources')) . '$';
 
         $src_dir = dirname($path);

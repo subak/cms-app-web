@@ -1,12 +1,23 @@
 #!/usr/bin/env php
 <?php
 
-set_include_path(join(PATH_SEPARATOR, [
-  get_include_path(), 'app/php', 'web/php', 'html']));
+if(!isset($_ENV["APP_STACK"])) {
+    throw new \Exception("APP_STACK");
+}
 
-require_once 'web/php/function.php';
-if ($path = stream_resolve_include_path('app/php/function.php')) {
-  require_once $path;
+require_once 'web/php/Context.php';
+$app_stack = explode(' ', $_ENV['APP_STACK']);
+$context = new \Context(json_encode(['app_stack' => $app_stack]));
+
+set_include_path(join(PATH_SEPARATOR, array_merge([get_include_path()],
+    array_map(function ($item) { return "${item}/php"; }, array_reverse($app_stack)),
+    ['html'])));
+
+foreach($app_stack as $dir){
+    $path = "${dir}/php/function.php";
+    if(file_exists($path)){
+        require_once $path;
+    }
 }
 
 function search_class_file($name) {
@@ -20,7 +31,7 @@ spl_autoload_register(function ($name)
     include $path : false;
 });
 
-$context = new \Context(end($_SERVER["argv"]));
+$context = $context->stack(end($_SERVER["argv"]));
 reset($_SERVER["argv"]);
 
 if (!($helper = $context->query('.helper'))) {
