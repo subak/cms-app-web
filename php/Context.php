@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__.'/function.php';
+
 class Context
 {
     private $_stack = [];
@@ -11,10 +13,10 @@ class Context
 
     public function query($query)
     {
-        $json = join(' + ', $this->_stack);
-        return json_decode(shell("jq '${json} | ${query}'", '{}'));
+        $json = join(' ', $this->_stack);
+        return json_decode(shell("jq -s add | jq '${query}'", $json));
     }
-    
+
     public function queryAll($query)
     {
         $res = array_map(function ($json) use ($query) {

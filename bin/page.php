@@ -1,13 +1,11 @@
 #!/usr/bin/env php
 <?php
 
-if(!isset($_ENV["APP_STACK"])) {
-    throw new \Exception("APP_STACK");
-}
-
 require_once 'web/php/Context.php';
-$app_stack = explode(' ', $_ENV['APP_STACK']);
-$context = new \Context(json_encode(['app_stack' => $app_stack]));
+$context = new \Context(end($_SERVER["argv"]));
+reset($_SERVER["argv"]);
+
+$app_stack = $context->get('app_stack');
 
 set_include_path(join(PATH_SEPARATOR, array_merge([get_include_path()],
     array_map(function ($item) { return "${item}/php"; }, array_reverse($app_stack)),
@@ -30,9 +28,6 @@ spl_autoload_register(function ($name)
   return ($path = search_class_file($name)) ?
     include $path : false;
 });
-
-$context = $context->stack(end($_SERVER["argv"]));
-reset($_SERVER["argv"]);
 
 if (!($helper = $context->query('.helper'))) {
     $helper = preg_replace(

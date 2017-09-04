@@ -19,6 +19,7 @@ class Handler
       query = Hash[Hash[*env['QUERY_STRING'].scan(/([^=&]+)=([^=&]+)/).flatten].map{|k,v| [URI.decode_www_component(k),URI.decode_www_component(v)]}]
       context['query'] = env['QUERY_STRING'] unless env['QUERY_STRING'].empty?
       context.merge!(JSON.parse query['context']) if query['context']
+      context.merge!({:app_stack => ENV['APP_STACK'].split.reverse})
 
       cache_path = "/tmp/cms#{context['uri']}".sub(/\/$/, '/index.html')
 

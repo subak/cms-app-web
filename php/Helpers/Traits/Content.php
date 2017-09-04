@@ -153,7 +153,7 @@ EOF;
         $info = pathinfo($path);
         $ext = $info['extension'];
         $context = $this->context;
-        
+
         $content_dir = $context->get('content_dir');
         $tmp_dir = $context->get('tmp_dir');
 
@@ -180,7 +180,6 @@ EOF;
         $filter = $this->doc_filter($ext, $context);
         $rel_dir = $this->rel_dir($path, $context->get('uri'));
         $filter .= $this->rel_filter($rel_dir, $context);
-
 
         switch ($ext) {
             case 'adoc':
@@ -212,6 +211,6 @@ EOF;
         $resources = '\.' . implode('$|\.', $context->get('resources')) . '$';
 
         $src_dir = dirname($path);
-        fputs(STDERR, `cpr.sh ${src_dir} ${dst_dir} ${strip_dir} '${resources}`);
+        fputs(STDERR, `cpr.sh ${src_dir} ${dst_dir} ${strip_dir} '${resources}'`);
     }
 }
