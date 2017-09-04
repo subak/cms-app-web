@@ -30,6 +30,10 @@ class Context
     
     public function stack(string $json, ?int $offset=null)
     {
+        if(!json_decode($json)) {
+            throw new \Exception("json: ${json}");
+        }
+
         if ($offset) {
             if ($offset === 0) {
                 return new self(...array_merge([$json], $this->_stack));
