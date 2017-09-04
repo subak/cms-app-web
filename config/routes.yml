@@ -24,23 +24,16 @@
     !`find html#{context['uri'].sub(/\.css$/, '.s[ac]ss')}`.empty?
 
 -
-  name: Directory
-  match: '^(?<view>(?<uri>(/[^/]+)*/)(?:index\.html))$'
-  handler: page.php
-  condition: |
-    File.exists?(File.join('html',context['uri']))
-
--
   name: Xml
-  match: '^(?<view>(?<uri>(/[^/]+)*/[^/]+\.xml))$'
+  match: '^(?<uri>/(?<view>.*\.xml))$'
   handler: page.php
   content_type: application/xml; charset=utf-8
   condition: |
-    File.exists?(File.join('html',context['uri']))
+    File.exists?("html#{context['uri']}.php")
 
 -
-  name: Index
-  match: '^(?<view>(?<uri>(/[^/]+)*/[^/]+))$'
+  name: Html
+  match: '^(?<uri>/(?<view>.*\.html))$'
   handler: page.php
   condition: |
-    File.exists?("html/#{context['uri']}.php")
+    File.exists?("html#{context['uri']}.php")
