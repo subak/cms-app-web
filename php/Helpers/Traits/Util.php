@@ -10,7 +10,7 @@ trait Util
     
     public function loadAppContext($context) {
         foreach ($context->get('app_stack') as $dir) {
-            $context = $context->stack($this->contextFromFile("${dir}/config/meta.yml"));
+            $context = $context->stack($this->contextFromFile("${dir}/config/config.yml"));
         }
         return $context;
     }
