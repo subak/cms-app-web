@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__.'/function.php';
+
 class Context
 {
     private $_stack = [];
@@ -11,10 +13,10 @@ class Context
 
     public function query($query)
     {
-        $json = join(' + ', $this->_stack);
-        return json_decode(shell("jq '${json} | ${query}'", '{}'));
+        $json = join(' ', $this->_stack);
+        return json_decode(shell("jq -s add | jq '${query}'", $json));
     }
-    
+
     public function queryAll($query)
     {
         $res = array_map(function ($json) use ($query) {
@@ -28,9 +30,29 @@ class Context
         return $this->query(".${key}");
     }
     
-    public function stack(string $json)
+    public function stack(string $json, ?int $offset=null)
     {
-        return new self(...array_merge($this->_stack, [$json]));
+        if(!json_decode($json)) {
+            throw new \Exception("json: ${json}");
+        }
+
+        if ($offset) {
+            if ($offset === 0) {
+                return new self(...array_merge([$json], $this->_stack));
+            } else if($offset >= 1) {
+                return new self(...array_merge(
+                    array_slice($this->_stack, 0, $offset),
+                    [$json],
+                    array_slice($this->stack, $offset)));
+            } else {
+                return new self(...array_merge(
+                    array_slice($this->_stack, 0, $offset),
+                    [$json],
+                    array_slice($this->_stack, $offset)));
+            }
+        } else {
+            return new self(...array_merge($this->_stack, [$json]));
+        }
     }
     
     public function unstack()

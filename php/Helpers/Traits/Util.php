@@ -4,45 +4,14 @@ namespace Helpers\Traits;
 
 trait Util
 {
-    public function exec(string $cmd, string $stdin = "", &$std = []): string
-    {
-        $descriptorspec = [
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w']
-        ];
-
-        if ($stdin) {
-            $descriptorspec[0] = ['pipe', 'r'];
-        }
-
-        $process = proc_open($cmd, $descriptorspec, $pipes);
-
-        if (!is_resource($process)) {
-            throw new \Exception($cmd);
-        }
-
-        if ($stdin) {
-            fwrite($pipes[0], $stdin);
-            fclose($pipes[0]);
-        }
-
-        $stdout = stream_get_contents($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-
-        proc_close($process);
-
-        $std[1] = $stdout;
-        $std[2] = $stderr;
-
-        fputs(STDERR, $stderr);
-
-        return $stdout;
+    public function contextFromFile($path) {
+        return file_exists($path) ? `yaml2json ${path}` : '{}';
     }
     
-    public function context_from_file($path) {
-        return file_exists($path) ? `yaml2json ${path}` : '{}';
+    public function loadAppContext($context) {
+        foreach ($context->get('app_stack') as $dir) {
+            $context = $context->stack($this->contextFromFile("${dir}/config/config.yml"));
+        }
+        return $context;
     }
 }
