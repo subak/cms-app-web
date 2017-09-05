@@ -6,14 +6,13 @@ class Handler
   def call(env)
     @@router ||= Router.new(JSON.parse `yaml2json app/config/routes.yml`)
     context = @@router.detect(env['PATH_INFO'])
-
     condition = case
                   when context.nil? then false
                   when !context['condition'].nil? then eval(context['condition'])
                   else true
                 end
 
-    status = context['status'] || 200
+    status = !context.nil? && context['status'] || 200
 
     if (condition && status != 399)
       query = Hash[Hash[*env['QUERY_STRING'].scan(/([^=&]+)=([^=&]+)/).flatten].map{|k,v| [URI.decode_www_component(k),URI.decode_www_component(v)]}]

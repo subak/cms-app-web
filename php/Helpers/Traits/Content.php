@@ -165,10 +165,12 @@ EOF;
             $context_paths[] = "${content_dir}/".join('/', $current)."/${dir}.yml";
         }
 
-        $doc_context = array_pop($context_paths);
+        $doc_context = "${file_name}.yml";
         
         foreach ($context_paths as $context_path) {
-            $context = $context->stack($this->contextFromFile($context_path), -1);
+            if ($doc_context != $context_path) {
+                $context = $context->stack($this->contextFromFile($context_path), -1);    
+            }
         }
         
         $context = $context

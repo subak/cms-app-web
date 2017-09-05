@@ -42,6 +42,6 @@ if (!($helper = $context->query('.helper'))) {
 
 $klass = "\\Helpers\\${helper}";
 $helper = new $klass($context);
-$helper->include(preg_replace('@\.([^.]+)$@', '.\1.php', $context->query('.view')));
+$helper->include($context->query('.view').".php");
 
 exit(0);
