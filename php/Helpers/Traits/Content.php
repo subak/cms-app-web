@@ -28,22 +28,22 @@ trait Content {
     return trim(`head -1 ${path} | sed -r 's/^[#= ]*(.+)[#= ]*$/\\1/'`);
   }
 
-  protected function rel_filter($rel_dir, $assets) {
-    $assets_ptn = implode('|', $assets);
+  protected function rel_filter($rel_dir, $context) {
+    $assets_ptn = implode('|', $context->get('resources'));
     return <<<EOF
  | sed -r 's/"([^/]+)\.(${assets_ptn})"/"${rel_dir}\\1.\\2"/'
 EOF;
   }
 
-  protected function doc_filter($ext, $opts) {
+  protected function doc_filter($ext, $context) {
     $body_method = "${ext}_body";
     $full_method = "${ext}_full";
     $excerpt_method = "${ext}_excerpted";
     
-    if (array_key_exists('including_title', $opts) && $opts['including_title']) {
+    if ($including_title = $context->get('including_title')) {
       return $this->$full_method();
-    } else if (array_key_exists('excerpt', $opts) && !is_null($opts['excerpt'])) {
-      return $this->$excerpt_method($opts['excerpt']);
+    } else if ($excerpt = $context->get('excerpt')) {
+      return $this->$excerpt_method($excerpt);
     } else {
       return $this->$body_method();
     }
@@ -125,88 +125,94 @@ EOF;
    */
   protected function adoc_gen(string $path, string $dst_dir, string $strip_dir): string {
     $src_dir = dirname($path);
-    $this->exec("cpr.sh ${src_dir} ${dst_dir} ${strip_dir}");
+    fputs(STDERR, `cpr.sh ${src_dir} ${dst_dir} ${strip_dir}`);
     return str_replace($strip_dir, $dst_dir, $path);
   }
 
-  public function load_document($file_name, $uri, $params=[]) {
-    $path = $this->detect_document($file_name);
-    $info = pathinfo($path);
-    $ext = $info['extension'];
-    $context = $this->stack($this->context_from_file("${file_name}.yml"));
-    $rel_dir = $this->rel_dir($path, $uri);
-    $assets = $context->get('resources');
-    
-    $option = $this->doc_option($ext, $context);
-    $filter = $this->doc_filter($ext, $params);
-    $filter .= $this->rel_filter($rel_dir, $assets);
-
-    $content_dir = $context->get('content_dir');
-    $tmp_dir = $context->get('tmp_dir');
-    
-    switch ($ext) {
-      case 'adoc':
-        if (($requires = $context->get('asciidoctor.requires'))
-          && is_int(array_search('asciidoctor-diagram', $requires))) {
-          $path = $this->adoc_gen($path, $tmp_dir, $content_dir);
-        }
-        $cmd = "asciidoctor ${option} -o - ${path} ${filter}";
-        break;
-      case 'md':
-        $cmd = "pandoc ${option} ${path} ${filter}";
-        break;
-    }
-    if ($out_dir=$context->get('out_dir')) {
-      $this->build_content_resource($path, $out_dir, $tmp_dir);
-    }
-    return `${cmd}`;
-  }
-
-  public function load_document_with($file_name, $uri, $closure) {
-    $path = $this->detect_document($file_name);
-    $info = pathinfo($path);
-    $ext = $info['extension'];
-    $context = $this->stack($this->context_from_file("${file_name}.yml"));
-    $rel_dir = $this->rel_dir($path, $uri);
-    $assets = $context->get('resources');
-
-    $option = $this->doc_option($ext, $context);
-    $filter = $this->doc_filter($ext, []);
-    $filter .= $this->rel_filter($rel_dir, $assets);
-
-    $content_dir = $context->get('content_dir');
-    $tmp_dir = $context->get('tmp_dir');
-    
-    switch ($ext) {
-      case 'adoc':
-        if (($requires = $context->get('asciidoctor.requires'))
-          && is_int(array_search('asciidoctor-diagram', $requires))) {
-          $path = $this->adoc_gen($path, $tmp_dir, $content_dir);
-        }
-        $cmd = "asciidoctor ${option} -o - ${path} ${filter}";
-        break;
-      case 'md':
-        $cmd = "pandoc ${option} ${path} ${filter}";
-        break;
-    }
-
-    ob_start();
-    echo $closure(`${cmd}`, $context);
-    $result = ob_get_clean();
-
-    if ($out_dir=$context->get('out_dir')) {
-      $this->build_content_resource($path, $out_dir, $tmp_dir);
-    }
-
-    return $result;
-  }
-
-    protected function build_content_resource($path, $dst_dir, $strip_dir)
+    /**
+     * @param string $file_name
+     * @param string $before_context
+     * @param string $after_context
+     * @return string
+     */
+    public function loadDocument(string $file_name, string $before_context='{}', string $after_context='{}'): string
     {
-        $context = $this->context->stack($this->context_from_file(preg_replace('@\.[^.]+$@', '.yml', $path)));
+        return $this->loadDocumentWith($file_name, function ($doc, $context) { echo $doc; }, $before_context, $after_context);
+    }
+
+    /**
+     * @param string $file_name
+     * @param callable $closure
+     * @param string $before_context
+     * @param string $after_context
+     * @return string
+     */
+    public function loadDocumentWith(string $file_name, callable $closure, string $before_context = '{}', string $after_context = '{}'): string
+    {
+        $path = $this->detect_document($file_name);
+        $info = pathinfo($path);
+        $ext = $info['extension'];
+        $context = $this->context;
+
+        $content_dir = $context->get('content_dir');
+        $tmp_dir = $context->get('tmp_dir');
+
+        $dirs = explode('/', dirname(str_replace("${content_dir}/", '', $file_name)));
+        $current = [];
+        $context_paths = [];
+        foreach ($dirs as $dir) {
+            $current[] = $dir;
+            $context_paths[] = "${content_dir}/".join('/', $current)."/${dir}.yml";
+        }
+
+        $doc_context = "${file_name}.yml";
+        
+        foreach ($context_paths as $context_path) {
+            if ($doc_context != $context_path) {
+                $context = $context->stack($this->contextFromFile($context_path), -1);    
+            }
+        }
+        
+        $context = $context
+            ->stack($before_context, -1)
+            ->stack($this->contextFromFile($doc_context), -1)
+            ->stack($after_context, -1);
+
+        $option = $this->doc_option($ext, $context);
+        $filter = $this->doc_filter($ext, $context);
+        $rel_dir = $this->rel_dir($path, $context->get('uri'));
+        $filter .= $this->rel_filter($rel_dir, $context);
+
+        switch ($ext) {
+            case 'adoc':
+                if (($requires = $context->get('asciidoctor.requires'))
+                    && is_int(array_search('asciidoctor-diagram', $requires))) {
+                    $path = $this->adoc_gen($path, $tmp_dir, $content_dir);
+                }
+                $cmd = "asciidoctor ${option} -o - ${path} ${filter}";
+                break;
+            case 'md':
+                $cmd = "pandoc ${option} ${path} ${filter}";
+                break;
+        }
+
+        ob_start();
+        echo $closure(`${cmd}`, $context);
+        $result = ob_get_clean();
+
+        if ($out_dir = $context->get('out_dir')) {
+            $this->buildContentResource($path, $out_dir, $tmp_dir);
+        }
+
+        return $result;
+    }
+
+    protected function buildContentResource($path, $dst_dir, $strip_dir)
+    {
+        $context = $this->context->stack($this->contextFromFile(preg_replace('@\.[^.]+$@', '.yml', $path)));
         $resources = '\.' . implode('$|\.', $context->get('resources')) . '$';
 
         $src_dir = dirname($path);
-        return $this->exec("cpr.sh ${src_dir} ${dst_dir} ${strip_dir} '${resources}'");
+        fputs(STDERR, `cpr.sh ${src_dir} ${dst_dir} ${strip_dir} '${resources}'`);
     }
 }

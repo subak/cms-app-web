@@ -3,8 +3,6 @@ resources:
   - png
   - svg
 
-excerpt: 2
-
 pandoc:
   md:
     from: markdown_github+footnotes+inline_notes
