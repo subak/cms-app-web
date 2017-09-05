@@ -156,6 +156,7 @@ EOF;
 
         $content_dir = $context->get('content_dir');
         $tmp_dir = $context->get('tmp_dir');
+        $strip_dir = $content_dir;
 
         $dirs = explode('/', dirname(str_replace("${content_dir}/", '', $file_name)));
         $current = [];
@@ -187,7 +188,8 @@ EOF;
             case 'adoc':
                 if (($requires = $context->get('asciidoctor.requires'))
                     && is_int(array_search('asciidoctor-diagram', $requires))) {
-                    $path = $this->adoc_gen($path, $tmp_dir, $content_dir);
+                    $strip_dir = $tmp_dir;
+                    $path = $this->adoc_gen($path, $strip_dir, $content_dir);
                 }
                 $cmd = "asciidoctor ${option} -o - ${path} ${filter}";
                 break;
@@ -201,7 +203,7 @@ EOF;
         $result = ob_get_clean();
 
         if ($out_dir = $context->get('out_dir')) {
-            $this->buildContentResource($path, $out_dir, $tmp_dir);
+            $this->buildContentResource($path, $out_dir, $strip_dir);
         }
 
         return $result;
