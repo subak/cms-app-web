@@ -12,6 +12,7 @@
 
 -
   name: Assets
+  description: /tmp/cmsに書き出されたリソースを表示するため
   match: '(?:\.jpg|\.png|\.svg)$'
   status: 399
 

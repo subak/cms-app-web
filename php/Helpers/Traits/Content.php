@@ -166,7 +166,6 @@ EOF;
         }
 
         $doc_context = "${file_name}.yml";
-        //$doc_context = array_pop($context_paths);
         
         foreach ($context_paths as $context_path) {
             if ($doc_context != $context_path) {
