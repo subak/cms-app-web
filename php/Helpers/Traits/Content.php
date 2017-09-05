@@ -149,14 +149,15 @@ EOF;
      */
     public function loadDocumentWith(string $file_name, callable $closure, string $before_context = '{}', string $after_context = '{}'): string
     {
-        $path = $this->detect_document($file_name);
-        $info = pathinfo($path);
-        $ext = $info['extension'];
         $context = $this->context;
 
         $content_dir = $context->get('content_dir');
         $tmp_dir = $context->get('tmp_dir');
         $strip_dir = $content_dir;
+
+        $path = $this->detect_document("${content_dir}/${file_name}");
+        $info = pathinfo($path);
+        $ext = $info['extension'];
 
         $dirs = explode('/', dirname(str_replace("${content_dir}/", '', $file_name)));
         $current = [];
