@@ -6,8 +6,11 @@ trait Content {
   protected function detect_document($file_name) {
     $info = pathinfo($file_name);
     if (!array_key_exists('extension', $info)) {
-      $file_name = trim(`find -L ${file_name}.* -type f | egrep '(\.md|\.rst|\.adoc)' | head -n 1`);
-      $info = pathinfo($file_name);
+      $path = trim(`find -L ${file_name}.* -type f | egrep '(\.md|\.rst|\.adoc)' | head -n 1`);
+      if (!$path) {
+          throw new \Exception("file_name: ${file_name}");
+      }
+      $info = pathinfo($path);
     }
     return "${info['dirname']}/${info['basename']}";
   }
@@ -167,7 +170,7 @@ EOF;
             $context_paths[] = "${content_dir}/".join('/', $current)."/${dir}.yml";
         }
 
-        $doc_context = "${file_name}.yml";
+        $doc_context = "${content_dir}/${file_name}.yml";
         
         foreach ($context_paths as $context_path) {
             if ($doc_context != $context_path) {

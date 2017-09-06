@@ -96,15 +96,45 @@ trait View {
 
   public function list_directories_with($target, $closure) {
     $result = "";
-    $index = 1;
-    foreach ( scandir($target) as $name) {
+    $content_dir = $this->context->get('content_dir');
+    foreach ( scandir("${content_dir}/${target}") as $name) {
       $dir = "${target}/${name}";
-      if (is_dir($dir) and !in_array($name, ['.','..'])) {
+      if (is_dir("${content_dir}/${dir}") and !in_array($name, ['.','..'])) {
         ob_start();
-        echo $closure($dir, $index++);
+        echo $closure($dir);
         $result .= ob_get_clean();
       }
     }
     return $result;
+  }
+
+  public function listDirectories($target, $closure)
+  {
+      $result = "";
+      
+      $context = $this->context;
+      $content_dir = $context->get('content_dir');
+      $dirs = array_filter(explode("\n",`find ${content_dir}/${target}/* -maxdepth 0 -type d -exec basename {} \;`));
+
+      $items = [];
+      foreach($dirs as $dir) {
+          $_context = $context->stack($this->contextFromFile("${content_dir}/${target}/${dir}/meta.yml"));
+          if ($_context->get('display') ?? true) {
+              $items[] = [
+                  'sort' => $_context->get('sort'),
+                  'dir' => $dir
+              ];
+          }
+      }
+
+      array_multisort(array_column($items, 'sort'), $items);
+
+      foreach($items as $i => $item) {
+          ob_start();
+          $closure("${target}/${item['dir']}", $i);
+          $result .= ob_get_clean();
+      }
+      
+      return $result;
   }
 }
