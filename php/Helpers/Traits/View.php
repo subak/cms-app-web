@@ -94,47 +94,23 @@ trait View {
     return null;
   }
 
-  public function list_directories_with($target, $closure) {
-    $result = "";
-    $content_dir = $this->context->get('content_dir');
-    foreach ( scandir("${content_dir}/${target}") as $name) {
-      $dir = "${target}/${name}";
-      if (is_dir("${content_dir}/${dir}") and !in_array($name, ['.','..'])) {
-        ob_start();
-        echo $closure($dir);
-        $result .= ob_get_clean();
-      }
-    }
-    return $result;
-  }
-
-  public function listDirectories($target, $closure)
+  public function listDirectoriesWith($target, $closure)
   {
       $result = "";
-      
-      $context = $this->context;
-      $content_dir = $context->get('content_dir');
-      $dirs = array_filter(explode("\n",`find ${content_dir}/${target}/* -maxdepth 0 -type d -exec basename {} \;`));
+      $content_dir = $this->context->get('content_dir');
 
-      $items = [];
-      foreach($dirs as $dir) {
-          $_context = $context->stack($this->contextFromFile("${content_dir}/${target}/${dir}/meta.yml"));
-          if ($_context->get('display') ?? true) {
-              $items[] = [
-                  'sort' => $_context->get('sort'),
-                  'dir' => $dir
-              ];
+      foreach ( scandir("${content_dir}/${target}") as $name) {
+          $dir = "${target}/${name}";
+          $path = "${content_dir}/${dir}";
+          if (is_dir($path) and !in_array($name, ['.','..'])) {
+              $context = $this->context->stack($this->getContextFromFilename($path)->dump(), -1);
+              if ($context->get('display') ?? true) {
+                  ob_start();
+                  echo $closure($dir, $context);
+                  $result .= ob_get_clean();
+              }
           }
       }
-
-      array_multisort(array_column($items, 'sort'), $items);
-
-      foreach($items as $i => $item) {
-          ob_start();
-          $closure("${target}/${item['dir']}", $i);
-          $result .= ob_get_clean();
-      }
-      
       return $result;
   }
 }
