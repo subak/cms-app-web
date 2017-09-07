@@ -28,71 +28,77 @@ trait View {
         }
     }
 
-  protected function attr($array) {
-    $attributes = array();
-    foreach ($array as $name => $value) {
-      if (is_array($value)) {
-        $value = join(" ", $value);
-      }
-      $attributes[] = "${name}=\"${value}\"";
-    }
-    $attr = empty($attributes) ? "" : " ".join(" ", $attributes);
-    return $attr;
-  }
-
-  public function link_to($content, $uri, $option=array(), $args=array(), ?string $base_uri=null) {
-    $option['href'] = $this->rel($uri, $base_uri);
-
-    if ( $this->context->get('local') ) {
-      if ($uri[-1] === "/") {
-        $option['href'] .= 'index.html';
-      }
+    protected function attr($array)
+    {
+        $attributes = array();
+        foreach ($array as $name => $value) {
+            if (is_array($value)) {
+                $value = join(" ", $value);
+            }
+            $attributes[] = "${name}=\"${value}\"";
+        }
+        $attr = empty($attributes) ? "" : " " . join(" ", $attributes);
+        return $attr;
     }
 
-    if ($query = $this->context->get('query')) {
-      $option['href'] .= "?${query}";
+    public function linkTo($content, $uri, $option = array(), $args = array(), ?string $base_uri = null)
+    {
+        $option['href'] = $this->rel($uri, $base_uri);
+
+        if ($this->context->get('local')) {
+            if ($uri[-1] === "/") {
+                $option['href'] .= 'index.html';
+            }
+        }
+
+        if ($query = $this->context->get('query')) {
+            $option['href'] .= "?${query}";
+        }
+
+        return $this->tag('a', $content, $option, $args);
     }
 
-    return $this->tag('a', $content, $option, $args);
-  }
-
-  public function link_to_if($condition, $content, $path, $option=array(), $args=array()) {
-    $result = "";
-    if ($condition) {
-      $result = $this->link_to($content, $path, $option, $args);
+    public function linkToIf($condition, $content, $path, $option = array(), $args = array())
+    {
+        $result = "";
+        if ($condition) {
+            $result = $this->linkTo($content, $path, $option, $args);
+        }
+        return $result;
     }
-    return $result;
-  }
 
-  public function url_for($path) {
-    return $this->context->get('scheme').'://'.$this->context->get('host').$path;
-  }
-
-  public function rel($path, ?string $base_uri=null) {
-    $level = substr_count($base_uri ?? $this->context->get('uri'), "/");
-    $path = preg_replace('@^/@', './', $path);
-    for ($i=1; $i < $level; $i++) {
-      $path = '../'.$path;
+    public function urlFor($path)
+    {
+        return $this->context->get('scheme') . '://' . $this->context->get('host') . $path;
     }
-    return $path;
-  }
 
-  public function each($array, $closure, $tag=null, $args=[]) {
-    if ($array) {
-      ob_start();
-      if ($tag) {
-        echo "<$tag>";
-      }
-      foreach ($array as $key => $value) {
-        $closure($key, $value, $args);
-      }
-      if ($tag) {
-        echo "</$tag>";
-      }
-      return ob_get_clean();
+    public function rel($path, ?string $base_uri = null)
+    {
+        $level = substr_count($base_uri ?? $this->context->get('uri'), "/");
+        $path = preg_replace('@^/@', './', $path);
+        for ($i = 1; $i < $level; $i++) {
+            $path = '../' . $path;
+        }
+        return $path;
     }
-    return null;
-  }
+
+    public function each($array, $closure, $tag = null, $args = [])
+    {
+        if ($array) {
+            ob_start();
+            if ($tag) {
+                echo "<$tag>";
+            }
+            foreach ($array as $key => $value) {
+                $closure($key, $value, $args);
+            }
+            if ($tag) {
+                echo "</$tag>";
+            }
+            return ob_get_clean();
+        }
+        return null;
+    }
 
   public function listDirectoriesWith($target, $closure)
   {
