@@ -6,5 +6,11 @@ require 'yaml'
 $:.push(Dir.pwd)
 require 'web/ruby/router.rb'
 
-puts Router.new(YAML.load_file 'web/config/routes.yml')
-         .detect(ARGV.last).merge({:app_stack => ENV['APP_STACK'].split.reverse}).to_json
+puts Router.new(YAML.load_file ENV['APP_ROUTES'])
+         .detect(ARGV.last)
+         .merge({:app_stack => ENV.fetch('APP_STACK', 'web').split.reverse,
+                 :content_dir => ENV.fetch('CONTENT_DIR', 'content'),
+                 :html_dir => ENV.fetch('HTML_DIR', 'html'),
+                 :context_auto => ENV.fetch('CONTEXT_AUTO', 'meta.yml')})
+         .merge(JSON.parse ENV.fetch('CONTEXT', '{}'))
+         .to_json

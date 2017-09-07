@@ -4,7 +4,7 @@ class Handler
   @@router = nil
 
   def call(env)
-    @@router ||= Router.new(JSON.parse `yaml2json app/config/routes.yml`)
+    @@router ||= Router.new(JSON.parse `yaml2json #{ENV['APP_ROUTES']}`)
     context = @@router.detect(env['PATH_INFO'])
     condition = case
                   when context.nil? then false
@@ -17,9 +17,14 @@ class Handler
     if (condition && status != 399)
       query = Hash[Hash[*env['QUERY_STRING'].scan(/([^=&]+)=([^=&]+)/).flatten].map{|k,v| [URI.decode_www_component(k),URI.decode_www_component(v)]}]
       context['query'] = env['QUERY_STRING'] unless env['QUERY_STRING'].empty?
-      context.merge!(JSON.parse query['context']) if query['context']
-      context.merge!({:app_stack => ENV['APP_STACK'].split.reverse})
-
+      context
+          .merge!({:app_stack => (ENV['APP_STACK'] || 'web').split.reverse,
+                      :content_dir => ENV['CONTENT_DIR'] || 'content',
+                      :html_dir => ENV['HTML_DIR'] || 'html',
+                      :context_auto => ENV['CONTEXT_AUTO'] || 'meta.yml'})
+          .merge!(JSON.parse ENV['CONTEXT'] || '{}')
+          .merge!(JSON.parse query['context'] || '{}')
+      
       cache_path = "/tmp/cms#{context['uri']}".sub(/\/$/, '/index.html')
 
       if context['cache'].to_s.empty? || !File.exists?(cache_path) || !`find #{context['cache']} -newer #{cache_path}`.empty?

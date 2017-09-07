@@ -19,6 +19,9 @@ echo ${to_file} | egrep '/$' >/dev/null && to_file=${to_dir}/index.html
 
 [ -e ${to_dir} ] || mkdir -pv ${to_dir}
 
+set +e
 res=$(eval "${handler} '${context}'")
+set -e
+
 [ "${?}" -eq 0 ] && echo "${res}" > ${to_file} && echo ${to_file}
 exit 0

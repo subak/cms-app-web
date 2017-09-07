@@ -4,14 +4,10 @@ namespace Helpers\Traits;
 
 trait Util
 {
-    public function contextFromFile($path) {
-        return file_exists($path) ? `yaml2json ${path}` : '{}';
-    }
-    
-    public function loadAppContext($context) {
-        foreach ($context->get('app_stack') as $dir) {
-            $context = $context->stack($this->contextFromFile("${dir}/config/config.yml"));
-        }
-        return $context;
+    public function getContextFromFilename($filename)
+    {
+        return \Context::fromFilename($filename,
+            $this->context->get('content_dir'),
+            $this->context->get('context_auto'));
     }
 }
