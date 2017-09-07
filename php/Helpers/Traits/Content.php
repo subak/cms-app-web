@@ -18,7 +18,7 @@ trait Content {
 
     protected function relContentDir($path)
     {
-        return preg_replace("@^content/@", '', dirname($path));
+        return preg_replace('@^' . $this->context->get('content_dir') . '/@', '', dirname($path));
     }
 
     protected function relDir($path, $uri)
