@@ -6,11 +6,31 @@ class Context
 {
     private $_stack = [];
     
-    public function __construct(?string ...$args)
+    public function __construct(?string ...$stack)
     {
-        $this->_stack = $args;
+        $this->_stack = $stack;
     }
 
+    public static function fromPath($path)
+    {
+        return file_exists($path) ? `yaml2json ${path}` : '{}';
+    }
+    
+    public static function fromFilename($filename, $prefix, $context_auto)
+    {
+        $context = new \Context;
+
+        $current = $prefix;
+        foreach ( explode('/', $filename) as $token ) {
+            $current .= "/${token}";
+            foreach (["${current}.yml", "${current}/${context_auto}"] as $path) {
+                $context = $context->stack(self::fromPath($path));
+            }
+        }
+
+        return $context;
+    }
+    
     public function dump()
     {
         return $this->_stack;

@@ -11,14 +11,15 @@ class Page
     public function __construct($context)
     {
         parse_str($context->get('query'), $query);
-        $context = $this->loadAppContext($context);
-        $content_dir = $context->get('content_dir');
-        $base_dir = dirname($content_dir);
-        $base_dir = $base_dir === '.' ? $content_dir : $base_dir;
-        $this->context = $context
-            ->stack(`yaml2json ${content_dir}/${base_dir}.yml`)
+
+        $this->context = array_reduce($context->get('app_stack'), function($context, $app) {
+            return $context->stack(\Context::fromPath("${app}/config/" . $context->get('context_auto')));
+        }, $context);
+
+        $this->context = $this->context
+            ->stack($this->getContextFromFilename('')->dump())
             ->stack($query ? json_encode($query) : '{}');
-    } 
+    }
 
     public function include(string $path) {
         $context = $this->context;
