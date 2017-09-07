@@ -44,7 +44,7 @@ trait View {
     $option['href'] = $this->rel($uri, $base_uri);
 
     if ( $this->context->get('local') ) {
-      if ($this->is_dir($uri)) {
+      if ($uri[-1] === "/") {
         $option['href'] .= 'index.html';
       }
     }

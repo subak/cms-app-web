@@ -32,8 +32,4 @@ class Page
             throw new \Exception("include: ${path}");
         }
     }
-
-    protected function is_dir($uri) {
-        return substr($uri, -1) === '/';
-    }
 }
