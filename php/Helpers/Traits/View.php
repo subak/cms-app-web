@@ -44,7 +44,7 @@ trait View {
     $option['href'] = $this->rel($uri, $base_uri);
 
     if ( $this->context->get('local') ) {
-      if ($this->is_dir($uri)) {
+      if ($uri[-1] === "/") {
         $option['href'] .= 'index.html';
       }
     }
@@ -94,17 +94,23 @@ trait View {
     return null;
   }
 
-  public function list_directories_with($target, $closure) {
-    $result = "";
-    $index = 1;
-    foreach ( scandir($target) as $name) {
-      $dir = "${target}/${name}";
-      if (is_dir($dir) and !in_array($name, ['.','..'])) {
-        ob_start();
-        echo $closure($dir, $index++);
-        $result .= ob_get_clean();
+  public function listDirectoriesWith($target, $closure)
+  {
+      $result = "";
+      $content_dir = $this->context->get('content_dir');
+
+      foreach ( scandir("${content_dir}/${target}") as $name) {
+          $dir = "${target}/${name}";
+          $path = "${content_dir}/${dir}";
+          if (is_dir($path) and !in_array($name, ['.','..'])) {
+              $context = $this->context->stack($this->getContextFromFilename($path)->dump(), -1);
+              if ($context->get('display') ?? true) {
+                  ob_start();
+                  echo $closure($dir, $context);
+                  $result .= ob_get_clean();
+              }
+          }
       }
-    }
-    return $result;
+      return $result;
   }
 }

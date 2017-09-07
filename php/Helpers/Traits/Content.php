@@ -6,8 +6,11 @@ trait Content {
   protected function detect_document($file_name) {
     $info = pathinfo($file_name);
     if (!array_key_exists('extension', $info)) {
-      $file_name = trim(`find -L ${file_name}.* -type f | egrep '(\.md|\.rst|\.adoc)' | head -n 1`);
-      $info = pathinfo($file_name);
+      $path = trim(`find -L ${file_name}.* -type f | egrep '(\.md|\.rst|\.adoc)' | head -n 1`);
+      if (!$path) {
+          throw new \Exception("file_name: ${file_name}");
+      }
+      $info = pathinfo($path);
     }
     return "${info['dirname']}/${info['basename']}";
   }
@@ -149,35 +152,19 @@ EOF;
      */
     public function loadDocumentWith(string $file_name, callable $closure, string $before_context = '{}', string $after_context = '{}'): string
     {
-        $context = $this->context;
-
-        $content_dir = $context->get('content_dir');
-        $tmp_dir = $context->get('tmp_dir');
+        $content_dir = $this->context->get('content_dir');
+        $tmp_dir = $this->context->get('tmp_dir');
         $strip_dir = $content_dir;
 
         $path = $this->detect_document("${content_dir}/${file_name}");
         $info = pathinfo($path);
         $ext = $info['extension'];
 
-        $dirs = explode('/', dirname(str_replace("${content_dir}/", '', $file_name)));
-        $current = [];
-        $context_paths = [];
-        foreach ($dirs as $dir) {
-            $current[] = $dir;
-            $context_paths[] = "${content_dir}/".join('/', $current)."/${dir}.yml";
-        }
-
-        $doc_context = "${file_name}.yml";
-        
-        foreach ($context_paths as $context_path) {
-            if ($doc_context != $context_path) {
-                $context = $context->stack($this->contextFromFile($context_path), -1);    
-            }
-        }
-        
-        $context = $context
+        $context = $this->context
+            ->stack($this->getContextFromFilename($file_name)
+                ->unstack()->unstack()->dump(), -1)
             ->stack($before_context, -1)
-            ->stack($this->contextFromFile($doc_context), -1)
+            ->stack(\Context::fromPath("${content_dir}/${file_name}.yml"), -1)
             ->stack($after_context, -1);
 
         $option = $this->doc_option($ext, $context);
@@ -212,7 +199,7 @@ EOF;
 
     protected function buildContentResource($path, $dst_dir, $strip_dir)
     {
-        $context = $this->context->stack($this->contextFromFile(preg_replace('@\.[^.]+$@', '.yml', $path)));
+        $context = $this->context->stack(\Context::fromPath(preg_replace('@\.[^.]+$@', '.yml', $path)));
         $resources = '\.' . implode('$|\.', $context->get('resources')) . '$';
 
         $src_dir = dirname($path);
