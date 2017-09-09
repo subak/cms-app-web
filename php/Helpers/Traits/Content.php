@@ -150,7 +150,7 @@ EOF;
      * @param string $after_context
      * @return string
      */
-    public function loadDocument(string $file_name, string $before_context='{}', string $after_context='{}'): string
+    public function ぉあdぉあdDおloadDocument(string $file_name, string $before_context='{}', string $after_context='{}'): string
     {
         return $this->loadDocumentWith($file_name, function ($doc, $context) { echo $doc; }, $before_context, $after_context);
     }
@@ -176,9 +176,11 @@ EOF;
             ->stack($this->getContextFromFilename($file_name)
                 ->unstack()->unstack()->dump(), -1)
             ->stack($before_context, -1)
+            ->stack(json_encode([
+                'created' => `created.sh ${path}`,
+                'updated' => `updated.sh ${path}`]), -1)
             ->stack(\Context::fromPath("${content_dir}/${file_name}.yml"), -1)
             ->stack($after_context, -1);
-
         $option = $this->docOption($ext, $context);
         $filter = $this->docFilter($ext, $context);
         $rel_dir = $this->relDir($path, $context->get('uri'));
