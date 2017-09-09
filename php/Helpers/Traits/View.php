@@ -119,4 +119,24 @@ trait View {
       }
       return $result;
   }
+    
+    public function listDocumentsWith($target, $name, $closure, $sort_by="path", $desc=false)
+    {
+        $result = "";
+        $content_dir = $this->context->get('content_dir');
+        $desc_filter = $desc ? '| reverse' : '';
+        foreach ( json_decode(`list_documents.sh ${content_dir}/${target} ${name} | jq 'sort_by(.${sort_by}) ${desc_filter}'`) as $item ) {
+            $filename = basename(preg_replace("@^${content_dir}@", "", $item->path));
+            $context = $this->context
+                ->stack($this->getContextFromFilename($filename)->dump())
+                ->stack(json_encode($item));
+            if ($context->get('display') ?? true) {
+                ob_start();
+                echo $closure($filename, $context);
+                $result .= ob_get_clean();
+            }
+        }
+        return $result;
+    }
+
 }
