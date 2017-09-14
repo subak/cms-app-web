@@ -102,8 +102,10 @@ trait Document {
         return join(' ', $options);
     }
     
-    public function resolveResource($doc, $uri, $filename, $resources)
+    public function resolveResource($doc, $uri, $filename, $context=null)
     {
+        $context = $context ?? $this->context;
+        $resources = $context->get('resources');
         $rel_http_dir = str_repeat('../', substr_count($uri, '/') - 1) . "./";
         $rel_dir = $rel_http_dir.dirname($filename);
         $ptn = '"([^\"]+)\.('.join('|', $resources).')"';
@@ -128,7 +130,8 @@ trait Document {
                 'created' => trim(`created.sh ${path}`),
                 'updated' => trim(`updated.sh ${path}`),
                 'title' => trim(`get_doc_title.sh ${path}`),
-                'ext' => $ext]), -2);
+                'ext' => $ext,
+                'filename' => $filename]), -2);
 
         $doc = $this->convert($path, $ext, $this->context);
         
