@@ -13,3 +13,5 @@ pandoc:
 
 content_dir: content
 tmp_dir: /tmp/cms
+
+index_name: index
