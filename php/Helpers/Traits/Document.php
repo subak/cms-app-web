@@ -148,7 +148,7 @@ trait Document {
 
     public function listDocuments(string $filename, ?callable $before, ?callable $loop, ?callable $after=null, $context=null)
     {
-        $context = $context ?? $this->context;
+        $context = $this->array2context($context);
         $depth = $context->get('depth') ?? 2;
         $index_name = $context->get('index_name');
         $limit = $context->get('limit');
@@ -159,7 +159,7 @@ trait Document {
 
         $reverse = $order === 'desc' ? ' | reverse' : '';
         $display = $context->get('out_dir') ? 'map(select(.display == false | not)) |' : '';
-        $all = json_decode(`list_documents.sh ${content_dir}/${filename} ${index_name} ${depth} | jq '${display} sort_by(.${sort}) ${reverse}'`);
+        $all = json_decode(`cache.sh content/entry list_documents.sh ${content_dir}/${filename} ${index_name} ${depth} | jq '${display} sort_by(.${sort}) ${reverse}'`);
         
         $context = $context
             ->stack($this->getContextFromFilename($filename)->dump(), -1)
