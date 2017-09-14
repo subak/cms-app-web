@@ -8,7 +8,7 @@ index_name=${2}
 depth=${3:-2}
 
 echo '['
-for path in $(find content/entry -maxdepth ${depth} -regextype posix-egrep -regex '^.*\.(md|rst|adoc)$'); do
+for path in $(find ${target} -maxdepth ${depth} -regextype posix-egrep -regex '^.*\.(md|rst|adoc)$'); do
   echo ${glue}
 
   dir=$(dirname ${path})

@@ -113,7 +113,7 @@ trait Document {
         return preg_replace("@${ptn}@u", '"'.$rel_dir.'/$1.$2'.'"', $doc);
     }
     
-    public function fromDocument(string $filename, ?callable $closure)
+    public function fromDocument(string $filename, ?callable $closure=null)
     {
         $path = trim(`get_path_from_filename.sh ${filename}`);
         if (!is_file($path))  {
@@ -185,7 +185,7 @@ trait Document {
                 $docs = $all;
             }
 
-            foreach ($docs as $doc) {
+            foreach ($docs as $i => $doc) {
                 $path = $doc->path;
                 $info = pathinfo($path);
                 $ext = $info['extension'];
@@ -199,8 +199,8 @@ trait Document {
                     ->stack(json_encode([
                         'filename' => $filename,
                         'ext' => $ext,
-                        'title' => trim(`get_doc_title.sh ${path}`)
-                    ]), -2);
+                        'title' => trim(`get_doc_title.sh ${path}`),
+                        'seq' => $i + 1]), -2);
                 
                 ob_start();
                 echo $loop($this->convert($path, $info['extension'], $doc_context), $doc_context);
