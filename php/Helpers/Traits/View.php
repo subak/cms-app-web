@@ -3,8 +3,9 @@
 namespace Helpers\Traits;
 
 trait View {
-    public function tag($tag, $content = null, $option = array(), $args = array())
+    public function tag($tag, $content = null, $option = [], $context = null)
     {
+        $context = $this->array2context($context);
         $tags = array('br', 'img', 'hr', 'meta', 'input', 'embed', 'area', 'base', 'col', 'keygen', 'link', 'param', 'source');
 
         if (is_array($content)) {
@@ -14,7 +15,7 @@ trait View {
             if (is_object($content) && is_callable($content)) {
                 $attr = $this->attr($option);
                 ob_start();
-                $content($args);
+                $content($context);
                 $content = ob_get_clean();
             } else {
                 $attr = $this->attr($option);
@@ -28,89 +29,67 @@ trait View {
         }
     }
 
-  protected function attr($array) {
-    $attributes = array();
-    foreach ($array as $name => $value) {
-      if (is_array($value)) {
-        $value = join(" ", $value);
-      }
-      $attributes[] = "${name}=\"${value}\"";
-    }
-    $attr = empty($attributes) ? "" : " ".join(" ", $attributes);
-    return $attr;
-  }
-
-  public function link_to($content, $uri, $option=array(), $args=array(), ?string $base_uri=null) {
-    $option['href'] = $this->rel($uri, $base_uri);
-
-    if ( $this->context->get('local') ) {
-      if ($uri[-1] === "/") {
-        $option['href'] .= 'index.html';
-      }
+    protected function attr($array)
+    {
+        $attributes = array();
+        foreach ($array as $name => $value) {
+            if (is_array($value)) {
+                $value = join(" ", $value);
+            }
+            $attributes[] = "${name}=\"${value}\"";
+        }
+        $attr = empty($attributes) ? "" : " " . join(" ", $attributes);
+        return $attr;
     }
 
-    if ($query = $this->context->get('query')) {
-      $option['href'] .= "?${query}";
+    public function linkTo($content, $uri, $attr = [], $context = null)
+    {
+        $context = $this->array2context($context);
+        
+        $attr['href'] = $this->urlFor($uri, $context);
+        
+        return $this->tag('a', $content, $attr, $context);
     }
 
-    return $this->tag('a', $content, $option, $args);
-  }
-
-  public function link_to_if($condition, $content, $path, $option=array(), $args=array()) {
-    $result = "";
-    if ($condition) {
-      $result = $this->link_to($content, $path, $option, $args);
+    public function linkToIf($condition, $content, $path, $attr = [], $context = null)
+    {
+        $result = "";
+        if ($condition) {
+            $result = $this->linkTo($content, $path, $attr, $context);
+        }
+        return $result;
     }
-    return $result;
-  }
 
-  public function url_for($path) {
-    return $this->context->get('scheme').'://'.$this->context->get('host').$path;
-  }
-
-  public function rel($path, ?string $base_uri=null) {
-    $level = substr_count($base_uri ?? $this->context->get('uri'), "/");
-    $path = preg_replace('@^/@', './', $path);
-    for ($i=1; $i < $level; $i++) {
-      $path = '../'.$path;
+    public function urlFor(string $uri, $context=null)
+    {
+        $context = $this->array2context($context);
+        
+        $url = $this->rel($uri, $context->get('uri'));
+        
+        if ($context->get('only_path') ?? true) {
+            if ($context->get('local')) {
+                if ($uri[-1] === "/") {
+                    $url .= 'index.html';
+                }
+            }
+            
+            if ($query = $context->get('query')) {
+                $url .= "?${query}";
+            }
+        } else {
+            $url = $this->context->get('scheme') . '://' . $this->context->get('host') . $uri;
+        }
+        
+        return $url;
     }
-    return $path;
-  }
 
-  public function each($array, $closure, $tag=null, $args=[]) {
-    if ($array) {
-      ob_start();
-      if ($tag) {
-        echo "<$tag>";
-      }
-      foreach ($array as $key => $value) {
-        $closure($key, $value, $args);
-      }
-      if ($tag) {
-        echo "</$tag>";
-      }
-      return ob_get_clean();
+    public function rel($path, ?string $base_uri = null)
+    {
+        $level = substr_count($base_uri ?? $this->context->get('uri'), "/");
+        $path = preg_replace('@^/@', './', $path);
+        for ($i = 1; $i < $level; $i++) {
+            $path = '../' . $path;
+        }
+        return $path;
     }
-    return null;
-  }
-
-  public function listDirectoriesWith($target, $closure)
-  {
-      $result = "";
-      $content_dir = $this->context->get('content_dir');
-
-      foreach ( scandir("${content_dir}/${target}") as $name) {
-          $dir = "${target}/${name}";
-          $path = "${content_dir}/${dir}";
-          if (is_dir($path) and !in_array($name, ['.','..'])) {
-              $context = $this->context->stack($this->getContextFromFilename($path)->dump(), -1);
-              if ($context->get('display') ?? true) {
-                  ob_start();
-                  echo $closure($dir, $context);
-                  $result .= ob_get_clean();
-              }
-          }
-      }
-      return $result;
-  }
 }
