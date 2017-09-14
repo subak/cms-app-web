@@ -4,7 +4,7 @@ namespace Helpers;
 
 class Page
 {
-    use Traits\View, Traits\Content, Traits\Util;
+    use Traits\View, Traits\Util, Traits\Document;
 
     protected $context;
   
